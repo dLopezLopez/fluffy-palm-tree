@@ -5,12 +5,12 @@
    en su libro Types and Programming Languages.
 *)
 
-(* 
+(*
    The lexical analyzer: lexer.ml is generated automatically
    from lexer.mll.
-   
-   The only modification commonly needed here is adding new keywords to the 
-   list of reserved words at the top.  
+
+   The only modification commonly needed here is adding new keywords to the
+   list of reserved words at the top.
 *)
 
 {
@@ -24,14 +24,16 @@ let reservedWords = [
   ("else", fun i -> Parser.ELSE i);
   ("true", fun i -> Parser.TRUE i);
   ("false", fun i -> Parser.FALSE i);
+  ("bool", fun i -> Parser.BOOL i);
   ("lambda", fun i -> Parser.LAMBDA i);
   ("timesfloat", fun i -> Parser.TIMESFLOAT i);
+  ("nat", fun i -> Parser.NAT i);
   ("succ", fun i -> Parser.SUCC i);
   ("pred", fun i -> Parser.PRED i);
   ("iszero", fun i -> Parser.ISZERO i);
   ("let", fun i -> Parser.LET i);
   ("in", fun i -> Parser.IN i);
-  
+
   (* Symbols *)
   ("_", fun i -> Parser.USCORE i);
   ("'", fun i -> Parser.APOSTROPHE i);
@@ -49,13 +51,13 @@ let reservedWords = [
   ("::", fun i -> Parser.COLONCOLON i);
   ("=", fun i -> Parser.EQ i);
   ("==", fun i -> Parser.EQEQ i);
-  ("[", fun i -> Parser.LSQUARE i); 
+  ("[", fun i -> Parser.LSQUARE i);
   ("<", fun i -> Parser.LT i);
-  ("{", fun i -> Parser.LCURLY i); 
-  ("(", fun i -> Parser.LPAREN i); 
-  ("<-", fun i -> Parser.LEFTARROW i); 
-  ("{|", fun i -> Parser.LCURLYBAR i); 
-  ("[|", fun i -> Parser.LSQUAREBAR i); 
+  ("{", fun i -> Parser.LCURLY i);
+  ("(", fun i -> Parser.LPAREN i);
+  ("<-", fun i -> Parser.LEFTARROW i);
+  ("{|", fun i -> Parser.LCURLYBAR i);
+  ("[|", fun i -> Parser.LSQUAREBAR i);
   ("}", fun i -> Parser.RCURLY i);
   (")", fun i -> Parser.RPAREN i);
   ("]", fun i -> Parser.RSQUARE i);
@@ -91,7 +93,7 @@ let createID i str =
   with _ ->
     if (String.get str 0) >= 'A' && (String.get str 0) <= 'Z' then
        Parser.UCID {i=i;v=str}
-    else 
+    else
        Parser.LCID {i=i;v=str}
 
 (* Initialisation of all variables *)
@@ -189,14 +191,14 @@ rule main = parse
 | ['A'-'Z' 'a'-'z' '_']
   ['A'-'Z' 'a'-'z' '_' '0'-'9' '\'']*
     { createID (info lexbuf) (text lexbuf) }
-  (* Any reserved symbol is passed through createID too *)  
+  (* Any reserved symbol is passed through createID too *)
 | ":=" | "<:" | "<-" | "->" | "=>" | "==>"
 | "{|" | "|}" | "<|" | "|>" | "[|" | "|]" | "=="
     { createID (info lexbuf) (text lexbuf) }
-  (* Any oher known symbols pass through createID too *) 
+  (* Any oher known symbols pass through createID too *)
 | ['~' '%' '\\' '+' '-' '&' '|' ':' '@' '`' '$']+
     { createID (info lexbuf) (text lexbuf) }
-  (* Same as above *)  
+  (* Same as above *)
 | ['*' '#' '/' '!' '?' '^' '(' ')' '{' '}' '[' ']' '<' '>' '.' ';' '_' ','
    '=' '\'']
     { createID (info lexbuf) (text lexbuf) }
@@ -206,7 +208,7 @@ rule main = parse
 | eof { Parser.EOF(info lexbuf) }
   (* Any other unrecognised character should call an error *)
 | _  { error (info lexbuf) "Illegal character" }
-  
+
 (* The comment rules of the lexical analyser *)
 (* This is called whenever a /* is found *)
 and comment = parse
@@ -217,27 +219,27 @@ and comment = parse
   (* If there is still any depth, it keeps using comment rules *)
 | "*/"
     { depth := pred !depth; if !depth > 0 then comment lexbuf }
-  (* Reaching eof inside a comment means it is not closed *)  
+  (* Reaching eof inside a comment means it is not closed *)
 | eof
     { error (!startLex) "Comment not terminated" }
-  (* Anything other than newline is ignored as comment *)  
+  (* Anything other than newline is ignored as comment *)
 | [^ '\n']
     { comment lexbuf }
-  (* Newline means we should increase lineno *)  
+  (* Newline means we should increase lineno *)
 | "\n"
     { newline lexbuf; comment lexbuf }
 
 (* GetFile rules: After a line reference, white spaces are ignored *)
-(* until a double quote is found and getName rules are called *)    
+(* until a double quote is found and getName rules are called *)
 and getFile = parse
   " "* "\"" { getName lexbuf }
 
-(* GetName rules: Anything that is not "" or newline is treated as part of the filename *) 
+(* GetName rules: Anything that is not "" or newline is treated as part of the filename *)
 (* This updates the filename reference and calls finishname rules.*)
 and getName = parse
   [^ '"' '\n']+ { filename := (text lexbuf); finishName lexbuf }
 
-(* FinishName rules: when a closing double quote is found, parsing continues using main rules *) 
+(* FinishName rules: when a closing double quote is found, parsing continues using main rules *)
 and finishName = parse
   '"' [^ '\n']* { main lexbuf }
 
@@ -275,7 +277,7 @@ and escaped = parse
       else
 	Char.chr x
     }
-  (* Anything other than that calls for an error *)  
+  (* Anything other than that calls for an error *)
 | [^ '"' '\\' 't' 'n' '\'']
     { error (info lexbuf) "Illegal character constant" }
 

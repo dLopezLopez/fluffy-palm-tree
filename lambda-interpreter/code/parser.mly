@@ -5,7 +5,7 @@
    en su libro Types and Programming Languages.
 */
 
-/*  
+/*
  *  Yacc grammar for the parser.  The files parser.mli and parser.ml
  *  are generated automatically from parser.mly.
  */
@@ -34,8 +34,10 @@ open Syntax
 %token <Support.Error.info> ELSE
 %token <Support.Error.info> TRUE
 %token <Support.Error.info> FALSE
+%token <Support.Error.info> BOOL
 %token <Support.Error.info> LAMBDA
 %token <Support.Error.info> TIMESFLOAT
+%token <Support.Error.info> NAT
 %token <Support.Error.info> SUCC
 %token <Support.Error.info> PRED
 %token <Support.Error.info> ISZERO
@@ -91,7 +93,7 @@ open Syntax
 /* ---------------------------------------------------------------------- */
 /* The starting production of the generated parser is the syntactic class
    toplevel.  The type that is returned when a toplevel is recognized is
-     Syntax.context -> (Syntax.command list * Syntax.context) 
+     Syntax.context -> (Syntax.command list * Syntax.context)
    that is, the parser returns to the user program a function that,
    when given a naming context, returns a fully parsed list of
    Syntax.commands and the new naming context that results when
@@ -101,7 +103,7 @@ open Syntax
    they take a context as argument and return a fully parsed abstract
    syntax tree (and, if they involve any constructs that bind variables
    in some following phrase, a new context).
-   
+
 */
 
 %start toplevel
@@ -120,7 +122,7 @@ toplevel :
       { fun ctx -> [],ctx }
   | Command SEMI toplevel
       /* Whenever a new command followed by a semicolon (;) is completed,
-        the command is appended to the beginning of the list of commands 
+        the command is appended to the beginning of the list of commands
         returned by toplevel. */
       { fun ctx ->
           let cmd,ctx = $1 ctx in
@@ -129,12 +131,12 @@ toplevel :
 
 /* A top-level command */
 Command :
-  | Term 
+  | Term
     /* If a term is parsed, it is returned as an Evaluation of t
       in the current context. */
       { fun ctx -> (let t = $1 ctx in Eval(tmInfo t,t)),ctx }
   | LCID Binder
-    /* If the command is a lowercase word and a binder, the command is 
+    /* If the command is a lowercase word and a binder, the command is
       returned as a Bind on current context and its name added to the
       context */
       { fun ctx -> ((Bind($1.i,$1.v,$2 ctx)), addname ctx $1.v) }
@@ -146,7 +148,7 @@ Binder :
       its name is already added to the context in the Command rule. */
       { fun ctx -> NameBind }
   | EQ Term
-    /* If the binder is in the form "= Term", it is returned as 
+    /* If the binder is in the form "= Term", it is returned as
       a TmAbbBind of Term on current context. */
       { fun ctx -> TmAbbBind($2 ctx) }
 
@@ -155,22 +157,22 @@ Term :
     /* An application is just returned after being parsed. */
       { $1 }
   | IF Term THEN Term ELSE Term
-    /* An "if-then-else" Term is returned as a TmIf command 
+    /* An "if-then-else" Term is returned as a TmIf command
       to evaluate the Terms on current context. */
       { fun ctx -> TmIf($1, $2 ctx, $4 ctx, $6 ctx) }
-  | LAMBDA LCID DOT Term 
+  | LAMBDA LCID DOT Term
     /* An abstraction matching "lambda word . Term" adds word to the context
       and returns a TmAbs with the word and term on the new context. */
       { fun ctx ->
           let ctx1 = addname ctx $2.v in
-          TmAbs($1, $2.v, $4 ctx1) }
-  | LAMBDA USCORE DOT Term 
+          TmAbs($1, $2.v, TyBool  , $4 ctx1) }
+  | LAMBDA USCORE DOT Term
     /* An abstraction using underscore (_) is treated like a variable whose name can be disregarded. */
       { fun ctx ->
           let ctx1 = addname ctx "_" in
-          TmAbs($1, "_", $4 ctx1) }
+          TmAbs($1, "_", TyBool, $4 ctx1) }
   | LET LCID EQ Term IN Term
-    /* A "let word = Term in Term" clause is returned as a TmLet of the terms applied on current context 
+    /* A "let word = Term in Term" clause is returned as a TmLet of the terms applied on current context
       and the name of the last term added to the context */
       { fun ctx -> TmLet($1, $2.v, $4 ctx, $6 (addname ctx $2.v)) }
   | LET USCORE EQ Term IN Term
@@ -202,13 +204,13 @@ AppTerm :
 
 PathTerm :
     PathTerm DOT LCID
-      /* A projection "Term.word" is returned as a TmProj located where the . is and using 
+      /* A projection "Term.word" is returned as a TmProj located where the . is and using
         Term on current context and said word */
-      { fun ctx ->       
+      { fun ctx ->
           TmProj($2, $1 ctx, $3.v) }
   | PathTerm DOT INTV
-        /* A projection "Term.integer" is returned as a TmProj located where the . is and using 
-        Term on current context and said integer value */ 
+        /* A projection "Term.integer" is returned as a TmProj located where the . is and using
+        Term on current context and said integer value */
       { fun ctx ->
           TmProj($2, $1 ctx, string_of_int $3.v) }
   | ATerm
@@ -217,16 +219,16 @@ PathTerm :
 
 /* Atomic terms are ones that never require extra parentheses */
 ATerm :
-    LPAREN Term RPAREN  
+    LPAREN Term RPAREN
       /* Any Term between parentheses () is returned as-is */
-      { $2 } 
+      { $2 }
   | TRUE
       /* True is returned as a TmTrue with its location information */
       { fun ctx -> TmTrue($1) }
   | FALSE
       /* False is returned as a TmFalse with its location information */
-      { fun ctx -> TmFalse($1) }      
-  | LCID 
+      { fun ctx -> TmFalse($1) }
+  | LCID
       /* An unreserved word is returned as a TmVar variable using its information,
         location in the context and context length */
       { fun ctx ->

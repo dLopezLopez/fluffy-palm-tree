@@ -6,11 +6,11 @@
 *)
 
 (******************************************************************************
- *                                                                            
- * Module Core	                                                              
- *                                                                            
- * Core typechecking and evaluation functions                                 
- *                                                                            
+ *
+ * Module Core
+ *
+ * Core typechecking and evaluation functions
+ *
  *****************************************************************************)
 
 open Format
@@ -37,7 +37,7 @@ let rec isval ctx t = match t with
   | TmFloat _  -> true
   | TmString _  -> true
   | t when isnumericval ctx t  -> true
-  | TmAbs(_,_,_) -> true
+  | TmAbs(_,_,_,_) -> true
   | TmRecord(_,fields) -> List.for_all (fun (l,ti) -> isval ctx ti) fields
   | _ -> false
 
@@ -52,9 +52,9 @@ let rec eval1 ctx t = match t with
       TmIf(fi, t1', t2, t3)
   | TmVar(fi,n,_) ->
       (match getbinding fi ctx n with
-          TmAbbBind(t) -> t 
+          TmAbbBind(t) -> t
         | _ -> raise NoRuleApplies)
-  | TmApp(fi,TmAbs(_,x,t12),v2) when isval ctx v2 ->
+  | TmApp(fi,TmAbs(_,x,_,t12),v2) when isval ctx v2 ->
       termSubstTop v2 t12
   | TmApp(fi,v1,t2) when isval ctx v1 ->
       let t2' = eval1 ctx t2 in
@@ -63,12 +63,12 @@ let rec eval1 ctx t = match t with
       let t1' = eval1 ctx t1 in
       TmApp(fi, t1', t2)
   | TmRecord(fi,fields) ->
-      let rec evalafield l = match l with 
+      let rec evalafield l = match l with
         [] -> raise NoRuleApplies
-      | (l,vi)::rest when isval ctx vi -> 
+      | (l,vi)::rest when isval ctx vi ->
           let rest' = evalafield rest in
           (l,vi)::rest'
-      | (l,ti)::rest -> 
+      | (l,ti)::rest ->
           let ti' = eval1 ctx ti in
           (l, ti')::rest
       in let fields' = evalafield fields in
@@ -83,10 +83,10 @@ let rec eval1 ctx t = match t with
       TmFloat(fi, f1 *. f2)
   | TmTimesfloat(fi,(TmFloat(_,f1) as t1),t2) ->
       let t2' = eval1 ctx t2 in
-      TmTimesfloat(fi,t1,t2') 
+      TmTimesfloat(fi,t1,t2')
   | TmTimesfloat(fi,t1,t2) ->
       let t1' = eval1 ctx t1 in
-      TmTimesfloat(fi,t1',t2) 
+      TmTimesfloat(fi,t1',t2)
   | TmSucc(fi,t1) ->
       let t1' = eval1 ctx t1 in
       TmSucc(fi, t1')
@@ -105,16 +105,16 @@ let rec eval1 ctx t = match t with
       let t1' = eval1 ctx t1 in
       TmIsZero(fi, t1')
   | TmLet(fi,x,v1,t2) when isval ctx v1 ->
-      termSubstTop v1 t2 
+      termSubstTop v1 t2
   | TmLet(fi,x,t1,t2) ->
       let t1' = eval1 ctx t1 in
-      TmLet(fi, x, t1', t2) 
-  | _ -> 
+      TmLet(fi, x, t1', t2)
+  | _ ->
       raise NoRuleApplies
 
 (* eval evaluates the term t until it cannot be evaluated anymore. If debug mode is activated,
-   it also prints how the terms are being evaluated *) 
-let rec eval ctx t = 
+   it also prints how the terms are being evaluated *)
+let rec eval ctx t =
   if !debug then begin
     if not (isval ctx t) then begin pr "("; printtm ctx t; pr ") -> "
     end else ();
@@ -129,6 +129,6 @@ let rec eval ctx t =
 (* evalbinding evaluates the term contained by the binding until it cannot be evaluated anymore *)
 let evalbinding ctx b = match b with
     TmAbbBind(t) ->
-      let t' = eval ctx t in 
+      let t' = eval ctx t in
       TmAbbBind(t')
   | bind -> bind
