@@ -1,0 +1,26 @@
+Identity function :
+	id = lambda x . x ;
+
+Multiply by two :
+	mult2 = lambda x . timesfloat 2.0 x ;
+
+Fix function :
+	fix = lambda f . (lambda x . f ( lambda y . x x y )) (lambda x . f (lambda y . x x y));
+
+Sum function :
+	sumaux = lambda f . ( lambda n . ( lambda m . if (iszero n) then m else succ ( f ( pred n ) m )));
+	sum = fix sumaux;
+
+Less-or-equal function :
+	leqaux = lambda f . ( lambda m . ( lambda n . ( if iszero m then true else ( if iszero n then false else f (pred m) (pred n)))));
+	leq = fix leqaux;
+
+Times function :
+	timesaux = lambda f . ( lambda m . ( lambda n . (if (iszero m) then 0 else sum n (f (pred m) n))));
+	times = fix timesaux;
+
+Factorial function :
+	factaux = lambda f . ( lambda n . ( if (iszero n) then 1 else times n ( f (pred n))));
+	fact = fix factaux;
+
+
