@@ -160,17 +160,17 @@ Term :
     /* An "if-then-else" Term is returned as a TmIf command
       to evaluate the Terms on current context. */
       { fun ctx -> TmIf($1, $2 ctx, $4 ctx, $6 ctx) }
-  | LAMBDA LCID DOT Term
+  | LAMBDA LCID COLON Ty DOT Term
     /* An abstraction matching "lambda word . Term" adds word to the context
       and returns a TmAbs with the word and term on the new context. */
       { fun ctx ->
           let ctx1 = addname ctx $2.v in
-          TmAbs($1, $2.v, TyBool  , $4 ctx1) }
-  | LAMBDA USCORE DOT Term
+          TmAbs($1, $2.v, $4, $6 ctx1) }
+  | LAMBDA USCORE COLON Ty DOT Term
     /* An abstraction using underscore (_) is treated like a variable whose name can be disregarded. */
       { fun ctx ->
           let ctx1 = addname ctx "_" in
-          TmAbs($1, "_", TyBool, $4 ctx1) }
+          TmAbs($1, "_", $4, $6 ctx1) }
   | LET LCID EQ Term IN Term
     /* A "let word = Term in Term" clause is returned as a TmLet of the terms applied on current context
       and the name of the last term added to the context */
@@ -275,5 +275,11 @@ Field :
   | Term
       { fun ctx i -> (string_of_int i, $1 ctx) }
 
+Ty :
+
+  BOOL
+    {TyBool}
+  | NAT
+    {TyNat}
 
 /*   */

@@ -245,9 +245,14 @@ let rec printtm_Term outer ctx t = match t with
        pr " else ";
        printtm_Term false ctx t3;
        cbox()
-  | TmAbs(fi,x,_,t2) ->
+  | TmAbs(fi,x,ty,t2) ->
       (let (ctx',x') = (pickfreshname ctx x) in
-            obox(); pr "lambda "; pr "%s" x'; pr ". ";
+            obox(); pr "lambda "; pr "%s" x'; pr ": ";
+            (match ty with
+              TyBool -> pr "Bool ";
+            | TyNat -> pr "Nat ";
+            );
+            pr ". ";
             if (small t2) && not outer then break() else print_space();
             printtm_Term outer ctx' t2;
             cbox())
@@ -323,7 +328,7 @@ let printtm ctx t = printtm_Term true ctx t
 let prbinding ctx b = match b with
     NameBind -> ()
   | TmAbbBind(t) -> pr "= "; printtm ctx t
-
+;;
   (*Typechecking*)
   let getTypeFromContext fi ctx i =
     match (getbinding fi ctx i) with
@@ -334,9 +339,23 @@ let prbinding ctx b = match b with
 
   let rec typeof ctx t =
     match t with
-      TmTrue(fi) ->
+      TmZero(_) ->
+        TyNat
+      | TmSucc(fi,t) ->
+        (if (=) (typeof ctx t) TyNat then
+          TyNat
+        else error fi "parameter type mismatch")
+      | TmPred(fi,t) ->
+        (if (=) (typeof ctx t) TyNat then
+          TyNat
+        else error fi "parameter type mismatch")
+      | TmIsZero(fi,t) ->
+        (if (=) (typeof ctx t) TyNat then
+          TyBool
+        else error fi "parameter type mismatch")
+      | TmTrue(_) ->
         TyBool
-      | TmFalse(fi) ->
+      | TmFalse(_) ->
         TyBool
       | TmIf(fi,t1,t2,t3) ->
         if (=) (typeof ctx t1) TyBool then

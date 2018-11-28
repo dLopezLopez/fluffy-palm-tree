@@ -11,8 +11,8 @@
 
    7  Term : AppTerm
    8       | IF Term THEN Term ELSE Term
-   9       | LAMBDA LCID DOT Term
-  10       | LAMBDA USCORE DOT Term
+   9       | LAMBDA LCID COLON Ty DOT Term
+  10       | LAMBDA USCORE COLON Ty DOT Term
   11       | LET LCID EQ Term IN Term
   12       | LET USCORE EQ Term IN Term
 
@@ -45,7 +45,10 @@
   34  Field : LCID EQ Term
   35        | Term
 
-  36  %entry% : '\001' toplevel
+  36  Ty : BOOL
+  37     | NAT
+
+  38  %entry% : '\001' toplevel
 
 state 0
 	$accept : . %entry% $end  (0)
@@ -57,7 +60,7 @@ state 0
 
 
 state 1
-	%entry% : '\001' . toplevel  (36)
+	%entry% : '\001' . toplevel  (38)
 
 	IF  shift 3
 	TRUE  shift 4
@@ -130,8 +133,8 @@ state 5
 
 
 state 6
-	Term : LAMBDA . LCID DOT Term  (9)
-	Term : LAMBDA . USCORE DOT Term  (10)
+	Term : LAMBDA . LCID COLON Ty DOT Term  (9)
+	Term : LAMBDA . USCORE COLON Ty DOT Term  (10)
 
 	LCID  shift 27
 	USCORE  shift 28
@@ -316,9 +319,9 @@ state 18
 
 
 state 19
-	%entry% : '\001' toplevel .  (36)
+	%entry% : '\001' toplevel .  (38)
 
-	.  reduce 36
+	.  reduce 38
 
 
 state 20
@@ -401,16 +404,16 @@ state 26
 
 
 state 27
-	Term : LAMBDA LCID . DOT Term  (9)
+	Term : LAMBDA LCID . COLON Ty DOT Term  (9)
 
-	DOT  shift 48
+	COLON  shift 48
 	.  error
 
 
 state 28
-	Term : LAMBDA USCORE . DOT Term  (10)
+	Term : LAMBDA USCORE . COLON Ty DOT Term  (10)
 
-	DOT  shift 49
+	COLON  shift 49
 	.  error
 
 
@@ -695,55 +698,23 @@ state 47
 
 
 state 48
-	Term : LAMBDA LCID DOT . Term  (9)
+	Term : LAMBDA LCID COLON . Ty DOT Term  (9)
 
-	IF  shift 3
-	TRUE  shift 4
-	FALSE  shift 5
-	LAMBDA  shift 6
-	TIMESFLOAT  shift 7
-	SUCC  shift 8
-	PRED  shift 9
-	ISZERO  shift 10
-	LET  shift 11
-	LCID  shift 25
-	INTV  shift 13
-	FLOATV  shift 14
-	STRINGV  shift 15
-	LCURLY  shift 17
-	LPAREN  shift 18
+	BOOL  shift 62
+	NAT  shift 63
 	.  error
 
-	Term  goto 62
-	AppTerm  goto 22
-	PathTerm  goto 23
-	ATerm  goto 24
+	Ty  goto 64
 
 
 state 49
-	Term : LAMBDA USCORE DOT . Term  (10)
+	Term : LAMBDA USCORE COLON . Ty DOT Term  (10)
 
-	IF  shift 3
-	TRUE  shift 4
-	FALSE  shift 5
-	LAMBDA  shift 6
-	TIMESFLOAT  shift 7
-	SUCC  shift 8
-	PRED  shift 9
-	ISZERO  shift 10
-	LET  shift 11
-	LCID  shift 25
-	INTV  shift 13
-	FLOATV  shift 14
-	STRINGV  shift 15
-	LCURLY  shift 17
-	LPAREN  shift 18
+	BOOL  shift 62
+	NAT  shift 63
 	.  error
 
-	Term  goto 63
-	AppTerm  goto 22
-	PathTerm  goto 23
-	ATerm  goto 24
+	Ty  goto 65
 
 
 state 50
@@ -789,7 +760,7 @@ state 51
 	LPAREN  shift 18
 	.  error
 
-	Term  goto 64
+	Term  goto 66
 	AppTerm  goto 22
 	PathTerm  goto 23
 	ATerm  goto 24
@@ -815,7 +786,7 @@ state 52
 	LPAREN  shift 18
 	.  error
 
-	Term  goto 65
+	Term  goto 67
 	AppTerm  goto 22
 	PathTerm  goto 23
 	ATerm  goto 24
@@ -847,7 +818,7 @@ state 54
 	LPAREN  shift 18
 	.  error
 
-	Term  goto 66
+	Term  goto 68
 	AppTerm  goto 22
 	PathTerm  goto 23
 	ATerm  goto 24
@@ -883,7 +854,7 @@ state 56
 	AppTerm  goto 22
 	PathTerm  goto 23
 	ATerm  goto 24
-	NEFields  goto 67
+	NEFields  goto 69
 	Field  goto 42
 
 
@@ -914,49 +885,63 @@ state 60
 state 61
 	Term : IF Term THEN Term . ELSE Term  (8)
 
-	ELSE  shift 68
+	ELSE  shift 70
 	.  error
 
 
 state 62
-	Term : LAMBDA LCID DOT Term .  (9)
+	Ty : BOOL .  (36)
 
-	.  reduce 9
+	.  reduce 36
 
 
 state 63
-	Term : LAMBDA USCORE DOT Term .  (10)
+	Ty : NAT .  (37)
 
-	.  reduce 10
+	.  reduce 37
 
 
 state 64
-	Term : LET LCID EQ Term . IN Term  (11)
+	Term : LAMBDA LCID COLON Ty . DOT Term  (9)
 
-	IN  shift 69
+	DOT  shift 71
 	.  error
 
 
 state 65
-	Term : LET USCORE EQ Term . IN Term  (12)
+	Term : LAMBDA USCORE COLON Ty . DOT Term  (10)
 
-	IN  shift 70
+	DOT  shift 72
 	.  error
 
 
 state 66
+	Term : LET LCID EQ Term . IN Term  (11)
+
+	IN  shift 73
+	.  error
+
+
+state 67
+	Term : LET USCORE EQ Term . IN Term  (12)
+
+	IN  shift 74
+	.  error
+
+
+state 68
 	Field : LCID EQ Term .  (34)
 
 	.  reduce 34
 
 
-state 67
+state 69
 	NEFields : Field COMMA NEFields .  (33)
 
 	.  reduce 33
 
 
-state 68
+state 70
 	Term : IF Term THEN Term ELSE . Term  (8)
 
 	IF  shift 3
@@ -976,13 +961,65 @@ state 68
 	LPAREN  shift 18
 	.  error
 
-	Term  goto 71
+	Term  goto 75
 	AppTerm  goto 22
 	PathTerm  goto 23
 	ATerm  goto 24
 
 
-state 69
+state 71
+	Term : LAMBDA LCID COLON Ty DOT . Term  (9)
+
+	IF  shift 3
+	TRUE  shift 4
+	FALSE  shift 5
+	LAMBDA  shift 6
+	TIMESFLOAT  shift 7
+	SUCC  shift 8
+	PRED  shift 9
+	ISZERO  shift 10
+	LET  shift 11
+	LCID  shift 25
+	INTV  shift 13
+	FLOATV  shift 14
+	STRINGV  shift 15
+	LCURLY  shift 17
+	LPAREN  shift 18
+	.  error
+
+	Term  goto 76
+	AppTerm  goto 22
+	PathTerm  goto 23
+	ATerm  goto 24
+
+
+state 72
+	Term : LAMBDA USCORE COLON Ty DOT . Term  (10)
+
+	IF  shift 3
+	TRUE  shift 4
+	FALSE  shift 5
+	LAMBDA  shift 6
+	TIMESFLOAT  shift 7
+	SUCC  shift 8
+	PRED  shift 9
+	ISZERO  shift 10
+	LET  shift 11
+	LCID  shift 25
+	INTV  shift 13
+	FLOATV  shift 14
+	STRINGV  shift 15
+	LCURLY  shift 17
+	LPAREN  shift 18
+	.  error
+
+	Term  goto 77
+	AppTerm  goto 22
+	PathTerm  goto 23
+	ATerm  goto 24
+
+
+state 73
 	Term : LET LCID EQ Term IN . Term  (11)
 
 	IF  shift 3
@@ -1002,13 +1039,13 @@ state 69
 	LPAREN  shift 18
 	.  error
 
-	Term  goto 72
+	Term  goto 78
 	AppTerm  goto 22
 	PathTerm  goto 23
 	ATerm  goto 24
 
 
-state 70
+state 74
 	Term : LET USCORE EQ Term IN . Term  (12)
 
 	IF  shift 3
@@ -1028,29 +1065,41 @@ state 70
 	LPAREN  shift 18
 	.  error
 
-	Term  goto 73
+	Term  goto 79
 	AppTerm  goto 22
 	PathTerm  goto 23
 	ATerm  goto 24
 
 
-state 71
+state 75
 	Term : IF Term THEN Term ELSE Term .  (8)
 
 	.  reduce 8
 
 
-state 72
+state 76
+	Term : LAMBDA LCID COLON Ty DOT Term .  (9)
+
+	.  reduce 9
+
+
+state 77
+	Term : LAMBDA USCORE COLON Ty DOT Term .  (10)
+
+	.  reduce 10
+
+
+state 78
 	Term : LET LCID EQ Term IN Term .  (11)
 
 	.  reduce 11
 
 
-state 73
+state 79
 	Term : LET USCORE EQ Term IN Term .  (12)
 
 	.  reduce 12
 
 
-59 terminals, 12 nonterminals
-37 grammar rules, 74 states
+59 terminals, 13 nonterminals
+39 grammar rules, 80 states

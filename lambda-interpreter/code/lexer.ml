@@ -10,10 +10,10 @@ let reservedWords = [
   ("else", fun i -> Parser.ELSE i);
   ("true", fun i -> Parser.TRUE i);
   ("false", fun i -> Parser.FALSE i);
-  ("bool", fun i -> Parser.BOOL i);
+  ("Bool", fun i -> Parser.BOOL i);
   ("lambda", fun i -> Parser.LAMBDA i);
   ("timesfloat", fun i -> Parser.TIMESFLOAT i);
-  ("nat", fun i -> Parser.NAT i);
+  ("Nat", fun i -> Parser.NAT i);
   ("succ", fun i -> Parser.SUCC i);
   ("pred", fun i -> Parser.PRED i);
   ("iszero", fun i -> Parser.ISZERO i);

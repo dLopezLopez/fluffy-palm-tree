@@ -21,6 +21,7 @@ open Support.Pervasive
 (** ------------------------   EVALUATION  ------------------------ **)
 
 exception NoRuleApplies
+exception TypeMissMatch
 
 let debug = ref false
 
@@ -44,9 +45,11 @@ let rec isval ctx t = match t with
 (* eval1 evaluates one step forward the term t *)
 let rec eval1 ctx t = match t with
     TmIf(_,TmTrue(_),t2,t3) ->
-      t2
+      (if (=) (typeof ctx t2) (typeof ctx t3) then t2
+      else raise TypeMissMatch)
   | TmIf(_,TmFalse(_),t2,t3) ->
-      t3
+      (if (=) (typeof ctx t2) (typeof ctx t3) then t3
+      else raise TypeMissMatch)
   | TmIf(fi,t1,t2,t3) ->
       let t1' = eval1 ctx t1 in
       TmIf(fi, t1', t2, t3)
@@ -54,8 +57,12 @@ let rec eval1 ctx t = match t with
       (match getbinding fi ctx n with
           TmAbbBind(t) -> t
         | _ -> raise NoRuleApplies)
-  | TmApp(fi,TmAbs(_,x,_,t12),v2) when isval ctx v2 ->
+  | TmApp(fi,TmAbs(_,x,ty2,t12),v2) when isval ctx v2 -> if ((=) (typeof ctx v2) ty2) then
       termSubstTop v2 t12
+      else raise TypeMissMatch
+  | TmApp(fi,TmAbs(fi2,x,ty2,t12),v2)->
+      let v2' = eval1 ctx v2 in
+      TmApp(fi,TmAbs(fi2,x,ty2,t12),v2')
   | TmApp(fi,v1,t2) when isval ctx v1 ->
       let t2' = eval1 ctx t2 in
       TmApp(fi, v1, t2')
@@ -121,10 +128,12 @@ let rec eval ctx t =
       try let t' = eval1 ctx t;
       in eval ctx t'
     with NoRuleApplies -> t
+    | TypeMissMatch -> pr "Type miss matched\n"; t
   end else
     try let t' = eval1 ctx t;
       in eval ctx t'
     with NoRuleApplies -> t
+    | TypeMissMatch -> pr "Type miss matched\n"; t
 
 (* evalbinding evaluates the term contained by the binding until it cannot be evaluated anymore *)
 let evalbinding ctx b = match b with
