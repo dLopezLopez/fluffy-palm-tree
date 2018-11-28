@@ -234,17 +234,20 @@ let small t =
   | _ -> false
 
 let rec printtm_Term outer ctx t = match t with
-    TmIf(fi, t1, t2, t3) ->
-       obox0();
-       pr "if ";
-       printtm_Term false ctx t1;
-       print_space();
-       pr " then ";
-       printtm_Term false ctx t2;
-       print_space();
-       pr " else ";
-       printtm_Term false ctx t3;
-       cbox()
+    TmIf(fi, t1, t2, t3) -> match t1 with
+      TmFalse(_)
+      |TmTrue(_) ->
+          obox0();
+          pr "if ";
+          printtm_Term false ctx t1;
+          print_space();
+          pr " then ";
+          printtm_Term false ctx t2;
+          print_space();
+          pr " else ";
+          printtm_Term false ctx t3;
+          cbox()
+      |_-> error fi "If condition must be a boolean"
   | TmAbs(fi,x,ty,t2) ->
       (let (ctx',x') = (pickfreshname ctx x) in
             obox(); pr "lambda "; pr "%s" x'; pr ": ";
@@ -312,11 +315,11 @@ and printtm_ATerm outer ctx t = match t with
   | TmString(_,s) -> pr "%s" ("\"" ^ s ^ "\"")
   | TmZero(fi) ->
        pr "0"
-  | TmSucc(_,t1) ->
+  | TmSucc(fi,t1) ->
      let rec f n t = match t with
          TmZero(_) -> pr "%s" (string_of_int n)
        | TmSucc(_,s) -> f (n+1) s
-       | _ -> (pr "(succ "; printtm_ATerm false ctx t1; pr ")")
+       | _ -> error fi "must be a number" (*(pr "(succ "; printtm_ATerm false ctx t1; pr ")")*)
      in f 1 t1
   | t -> pr "("; printtm_Term outer ctx t; pr ")"
 
