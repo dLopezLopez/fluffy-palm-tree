@@ -50,6 +50,8 @@ let rec eval1 ctx t = match t with
   | TmIf(_,TmFalse(_),t2,t3) ->
       (if (=) (typeof ctx t2) (typeof ctx t3) then t3
       else raise TypeMissMatch)
+  (*)|TmIf(_,_,_,_) ->
+      raise TypeMissMatch*)
   | TmIf(fi,t1,t2,t3) ->
       let t1' = eval1 ctx t1 in
       TmIf(fi, t1', t2, t3)
