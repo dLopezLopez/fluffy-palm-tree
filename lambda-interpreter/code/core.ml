@@ -37,24 +37,26 @@ let rec isval ctx t = match t with
   | TmFloat _  -> true
   | TmString _  -> true
   | t when isnumericval ctx t  -> true
-  | TmAbs(_,_,_,_) -> true
+  | TmAbs(_,_,_) -> true
   | TmRecord(_,fields) -> List.for_all (fun (l,ti) -> isval ctx ti) fields
   | _ -> false
 
 (* eval1 evaluates one step forward the term t *)
 let rec eval1 ctx t = match t with
-    TmIf(_,TmTrue(_),t2,t3) ->
-      t2
+  TmIf(_,TmTrue(_),t2,t3) ->
+    t2
   | TmIf(_,TmFalse(_),t2,t3) ->
-      t3
-  | TmIf(fi,t1,t2,t3) ->
+    t3
+  | TmIf(_,_,_,_) ->
+    err "if only take booleans"
+ (*  | TmIf(fi,t1,t2,t3) ->
       let t1' = eval1 ctx t1 in
-      TmIf(fi, t1', t2, t3)
+      TmIf(fi, t1', t2, t3)*)
   | TmVar(fi,n,_) ->
       (match getbinding fi ctx n with
           TmAbbBind(t) -> t
         | _ -> raise NoRuleApplies)
-  | TmApp(fi,TmAbs(_,x,_,t12),v2) when isval ctx v2 ->
+  | TmApp(fi,TmAbs(_,x,t12),v2) when isval ctx v2 ->
       termSubstTop v2 t12
   | TmApp(fi,v1,t2) when isval ctx v1 ->
       let t2' = eval1 ctx t2 in

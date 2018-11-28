@@ -6,11 +6,11 @@
 *)
 
 (*****************************************************************************
- *
- * Module Syntax
- *
- * Syntax trees and associated support functions
- *
+ *                                                                           
+ * Module Syntax                                                             
+ *                                                                           
+ * Syntax trees and associated support functions                             
+ *                                                                           
  ****************************************************************************)
 
 open Format
@@ -20,20 +20,13 @@ open Support.Pervasive
 (** ---------------------------------------------------------------------- **)
 (** Datatypes **)
 
-(*Types*)
-type ty =
-  TyBool
-  | TyNat
-  | TyArr of ty * ty
-;;
-
 (* Terms recognized by the program *)
 type term =
     TmTrue of info					(* Boolean True *)
   | TmFalse of info					(* Boolean False *)
   | TmIf of info * term * term * term			(* If/then/else *)
   | TmVar of info * int * int				(* Variable *)
-  | TmAbs of info * string * ty * term			(* Abstraction *)
+  | TmAbs of info * string * term			(* Abstraction *)
   | TmApp of info * term * term				(* Application *)
   | TmRecord of info * (string * term) list		(* Record *)
   | TmProj of info * term * string			(* Projection *)
@@ -48,8 +41,7 @@ type term =
 
 (* 2 types of binding. The standalone and the one associated with a term *)
 type binding =
-    NameBind
-  | VarBind of ty
+    NameBind 
   | TmAbbBind of term
 
 (* The context type, a list of bindings and its symbols *)
@@ -62,7 +54,6 @@ type command =
 
 (** ---------------------------------------------------------------------- **)
 (** Context management (1) **)
-
 
 (* Represents an empty context *)
 let emptycontext = []
@@ -87,8 +78,8 @@ let rec isnamebound ctx x =
 
 (* pickfreshname checks if symbol x has already been used in context ctx. If that
    is the case, it appends a simple quotation mark at the end of x to create a new
-   symbol and try again. Once he gets a symbol that hasn't been used, he adds the
-   binding 'NameBind' and the symbol to context ctx and returns this new context
+   symbol and try again. Once he gets a symbol that hasn't been used, he adds the 
+   binding 'NameBind' and the symbol to context ctx and returns this new context 
    and the symbol as a pair *)
 let rec pickfreshname ctx x =
   if isnamebound ctx x then pickfreshname ctx (x^"'")
@@ -96,7 +87,7 @@ let rec pickfreshname ctx x =
 
 (* index2name returns the symbol at x position on context ctx. If the symbol can
    not be found, an error message is printed *)
-let index2name fi ctx x =
+let index2name fi ctx x = 
     try
       let (xn,_) = List.nth ctx x in
       xn
@@ -119,13 +110,13 @@ let rec name2index fi ctx x =
 (** Shifting **)
 
 (* defines behaviour when shifting each of the term 'types' *)
-let tmmap onvar c t =
+let tmmap onvar c t = 
   let rec walk c t = match t with
     TmTrue(fi) as t -> t
   | TmFalse(fi) as t -> t
   | TmIf(fi,t1,t2,t3) -> TmIf(fi,walk c t1,walk c t2,walk c t3)
   | TmVar(fi,x,n) -> onvar fi c x n
-  | TmAbs(fi,x,ty,t2) -> TmAbs(fi,x,ty,walk (c+1) t2)
+  | TmAbs(fi,x,t2) -> TmAbs(fi,x,walk (c+1) t2)
   | TmApp(fi,t1,t2) -> TmApp(fi,walk c t1,walk c t2)
   | TmProj(fi,t1,l) -> TmProj(fi,walk c t1,l)
   | TmRecord(fi,fields) -> TmRecord(fi,List.map (fun (li,ti) ->
@@ -160,12 +151,12 @@ let bindingshift d bind =
 (** Context management (2) **)
 
 (* getbinding returns the binding at i position on context ctx and performs a
-   shifting with its position+1. If binding can not be found, an error message
+   shifting with its position+1. If binding can not be found, an error message 
    is printed and execution ends *)
-let rec getbinding fi ctx i =
+let rec getbinding fi ctx i = 
     try
       let (_,bind) = List.nth ctx i in
-      bindingshift (i+1) bind
+      bindingshift (i+1) bind 
     with Failure _ ->
       let msg =
         Printf.sprintf "Variable lookup failure: offset: %d, ctx size: %d" in
@@ -182,7 +173,7 @@ let termSubst j s t =
     t
 
 (* defines a shift, then performs substitution, then shifts back *)
-let termSubstTop s t =
+let termSubstTop s t = 
   termShift (-1) (termSubst 0 (termShift 1 s) t)
 
 (** ---------------------------------------------------------------------- **)
@@ -194,7 +185,7 @@ let tmInfo t = match t with
   | TmFalse(fi) -> fi
   | TmIf(fi,_,_,_) -> fi
   | TmVar(fi,_,_) -> fi
-  | TmAbs(fi,_,_,_) -> fi
+  | TmAbs(fi,_,_) -> fi
   | TmApp(fi, _, _) -> fi
   | TmProj(fi,_,_) -> fi
   | TmRecord(fi,_) -> fi
@@ -205,7 +196,7 @@ let tmInfo t = match t with
   | TmSucc(fi,_) -> fi
   | TmPred(fi,_) -> fi
   | TmIsZero(fi,_) -> fi
-  | TmLet(fi,_,_,_) -> fi
+  | TmLet(fi,_,_,_) -> fi 
 
 (** ---------------------------------------------------------------------- **)
 (** Printing **)
@@ -220,7 +211,7 @@ let tmInfo t = match t with
      break  Insert a breakpoint indicating where the line maybe broken if
             necessary.
   See the documentation for the Format module in the OCaml library for
-  more details.
+  more details. 
 *)
 
 let obox0() = open_hvbox 0
@@ -228,7 +219,7 @@ let obox() = open_hvbox 2
 let cbox() = close_box()
 let break() = print_break 0 0
 
-let small t =
+let small t = 
   match t with
     TmVar(_,_,_) -> true
   | _ -> false
@@ -245,7 +236,7 @@ let rec printtm_Term outer ctx t = match t with
        pr " else ";
        printtm_Term false ctx t3;
        cbox()
-  | TmAbs(fi,x,_,t2) ->
+  | TmAbs(fi,x,t2) ->
       (let (ctx',x') = (pickfreshname ctx x) in
             obox(); pr "lambda "; pr "%s" x'; pr ". ";
             if (small t2) && not outer then break() else print_space();
@@ -253,7 +244,7 @@ let rec printtm_Term outer ctx t = match t with
             cbox())
   | TmLet(fi, x, t1, t2) ->
        obox0();
-       pr "let "; pr "%s" x; pr " = ";
+       pr "let "; pr "%s" x; pr " = "; 
        printtm_Term false ctx t1;
        print_space(); pr "in"; print_space();
        printtm_Term false (addname ctx x) t2;
@@ -268,7 +259,7 @@ and printtm_AppTerm outer ctx t = match t with
       printtm_ATerm false ctx t2;
       cbox()
   | TmTimesfloat(_,t1,t2) ->
-       pr "timesfloat "; printtm_ATerm false ctx t1;
+       pr "timesfloat "; printtm_ATerm false ctx t1; 
        pr " "; printtm_ATerm false ctx t2
   | TmPred(_,t1) ->
        pr "pred "; printtm_ATerm false ctx t1
@@ -294,13 +285,13 @@ and printtm_ATerm outer ctx t = match t with
             ^ " }]")
   | TmRecord(fi, fields) ->
        let pf i (li,ti) =
-         if (li <> ((string_of_int i))) then (pr "%s" li; pr "=");
-         printtm_Term false ctx ti
+         if (li <> ((string_of_int i))) then (pr "%s" li; pr "="); 
+         printtm_Term false ctx ti 
        in let rec p i l = match l with
            [] -> ()
          | [f] -> pf i f
          | f::rest ->
-             pf i f; pr","; if outer then print_space() else break();
+             pf i f; pr","; if outer then print_space() else break(); 
              p (i+1) rest
        in pr "{"; open_hovbox 0; p 1 fields; pr "}"; cbox()
   | TmFloat(_,s) -> pr "%s" (string_of_float s)
@@ -315,46 +306,13 @@ and printtm_ATerm outer ctx t = match t with
      in f 1 t1
   | t -> pr "("; printtm_Term outer ctx t; pr ")"
 
-let printtm ctx t = printtm_Term true ctx t
+let printtm ctx t = printtm_Term true ctx t 
 
 (* prbinding prints a binding depending on its type. In case it's of type
    NameBind, nothing is printed and unit is returned. For TmAbbBind type,
    the equals symbol and the binding's term are printed *)
 let prbinding ctx b = match b with
     NameBind -> ()
-  | TmAbbBind(t) -> pr "= "; printtm ctx t
+  | TmAbbBind(t) -> pr "= "; printtm ctx t 
 
-  (*Typechecking*)
-  let getTypeFromContext fi ctx i =
-    match (getbinding fi ctx i) with
-      VarBind(tyT) -> tyT
-      | _ -> error fi
-       ("getTypeFromContext: Wrong kind of binding for variable" ^ (index2name fi ctx i))
-  ;;
 
-  let rec typeof ctx t =
-    match t with
-      TmTrue(fi) ->
-        TyBool
-      | TmFalse(fi) ->
-        TyBool
-      | TmIf(fi,t1,t2,t3) ->
-        if (=) (typeof ctx t1) TyBool then
-          let tyT2 = typeof ctx t2 in
-          if (=) tyT2 (typeof ctx t3) then tyT2
-          else error fi "arms of conditional hace different type"
-        else error fi "guard of conditional not a bollean"
-      | TmVar(fi,i,_) -> getTypeFromContext fi ctx i
-      | TmAbs(fi,x,tyT1,t2) ->
-        let ctx' = addbinding ctx x (VarBind(tyT1)) in
-        let tyT2 = typeof ctx' t2 in
-        TyArr(tyT1,tyT2)
-      | TmApp (fi,t1,t2) ->
-        let tyT1 = typeof ctx t1 in
-        let tyT2 = typeof ctx t2 in
-        (match tyT1 with
-          TyArr(tyT11,tyT12) ->
-            if (=) tyT2 tyT11 then tyT12
-            else error fi "parameter type mismatch"
-            | _ -> error fi "arrow type expected")
-  ;;
