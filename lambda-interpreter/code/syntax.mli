@@ -69,3 +69,4 @@ val prbinding : context -> binding -> unit
 val tmInfo: term -> info
 
 val typeof: context -> term -> ty
+val typecheck: context -> term -> bool

@@ -378,4 +378,9 @@ let prbinding ctx b = match b with
             if (=) tyT2 tyT11 then tyT12
             else error fi "parameter type mismatch"
             | _ -> error fi "arrow type expected")
+      | _ -> error fi "no lo hicimos aún"
   ;;
+
+let typecheck ctx t =
+  match typeof ctx t with
+  _ -> true;;

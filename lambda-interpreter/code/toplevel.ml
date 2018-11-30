@@ -83,12 +83,20 @@ let rec typeof2 ctx t =
    Results are printed a new context is returned *)
 let rec process_command ctx cmd = match cmd with
   | Eval(fi,t) ->
+<<<<<<< HEAD
       if (=) (typeof ctx t) TyBool || (=) (typeof ctx t) TyNat || (=) (typeof ctx t) (TyArr(TyBool,TyBool)) then
+=======
+      if typecheck ctx t then
+>>>>>>> 100778c6f2597be634f05af283987b43677ca838
         let t' = eval ctx t in
         printtm_ATerm true ctx t';
         force_newline();
         ctx
+<<<<<<< HEAD
         else error fi (typeof2 ctx t)
+=======
+      else error fi "que fallito"
+>>>>>>> 100778c6f2597be634f05af283987b43677ca838
   | Bind(fi,x,bind) ->
           let bind' = evalbinding ctx bind in
           pr "%s" x; pr " "; prbinding ctx bind'; force_newline();
