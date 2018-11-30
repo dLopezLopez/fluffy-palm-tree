@@ -154,6 +154,7 @@ let termShift d t = termShiftAbove d 0 t
 let bindingshift d bind =
   match bind with
     NameBind -> NameBind
+  | VarBind(ty) -> VarBind(ty)
   | TmAbbBind(t) -> TmAbbBind(termShift d t)
 
 (** ---------------------------------------------------------------------- **)
@@ -234,7 +235,7 @@ let small t =
   | _ -> false
 
 let rec printtm_Term outer ctx t = match t with
-    TmIf(fi, t1, t2, t3) -> 
+    TmIf(fi, t1, t2, t3) ->
         obox0();
         pr "if ";
         printtm_Term false ctx t1;
@@ -376,4 +377,9 @@ let prbinding ctx b = match b with
             if (=) tyT2 tyT11 then tyT12
             else error fi "parameter type mismatch"
             | _ -> error fi "arrow type expected")
+      | _ -> error fi "no lo hicimos aún"
   ;;
+
+let typecheck ctx t =
+  match typeof ctx t with
+  _ -> true;;

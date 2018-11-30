@@ -56,12 +56,12 @@ in
    Results are printed a new context is returned *)
 let rec process_command ctx cmd = match cmd with
   | Eval(fi,t) ->
-      if (=) (typeof ctx t) TyBool || (=) (typeof ctx t) TyNat then
+      if typecheck ctx t then
         let t' = eval ctx t in
         printtm_ATerm true ctx t';
         force_newline();
         ctx
-        else error fi "que fallito"
+      else error fi "que fallito"
   | Bind(fi,x,bind) ->
           let bind' = evalbinding ctx bind in
           pr "%s" x; pr " "; prbinding ctx bind'; force_newline();
