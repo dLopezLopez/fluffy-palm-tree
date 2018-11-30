@@ -154,7 +154,9 @@ let termShift d t = termShiftAbove d 0 t
 let bindingshift d bind =
   match bind with
     NameBind -> NameBind
+  | VarBind(ty) -> VarBind(ty)
   | TmAbbBind(t) -> TmAbbBind(termShift d t)
+
 
 (** ---------------------------------------------------------------------- **)
 (** Context management (2) **)
@@ -234,7 +236,7 @@ let small t =
   | _ -> false
 
 let rec printtm_Term outer ctx t = match t with
-    TmIf(fi, t1, t2, t3) -> 
+    TmIf(fi, t1, t2, t3) ->
         obox0();
         pr "if ";
         printtm_Term false ctx t1;
@@ -367,7 +369,7 @@ let prbinding ctx b = match b with
       | TmAbs(fi,x,tyT1,t2) ->
         let ctx' = addbinding ctx x (VarBind(tyT1)) in
         let tyT2 = typeof ctx' t2 in
-        TyArr(tyT1,tyT2)
+        tyT2
       | TmApp (fi,t1,t2) ->
         let tyT1 = typeof ctx t1 in
         let tyT2 = typeof ctx t2 in

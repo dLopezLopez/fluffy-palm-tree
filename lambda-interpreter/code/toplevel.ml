@@ -52,16 +52,43 @@ let parseLine line =
 in
   result
 
+let rec typeof2 ctx t =
+  match t with
+    TmZero(_) ->
+      "TyNat"
+    | TmSucc(fi,t) ->
+      (if (=) (typeof ctx t) TyNat then
+        "TyNat"
+      else error fi "parameter type mismatch")
+    | TmPred(fi,t) ->
+      (if (=) (typeof ctx t) TyNat then
+        "TyNat"
+      else error fi "parameter type mismatch")
+    | TmIsZero(fi,t) ->
+      (if (=) (typeof ctx t) TyNat then
+        "TyBool"
+      else error fi "parameter type mismatch")
+    | TmTrue(_) ->
+      "TyBool"
+    | TmFalse(_) ->
+      "TyBool"
+    |TmAbs(fi,x,TyBool,t2) ->
+      "TyBool"
+    |TmAbs(fi,x,TyNat,t2) ->
+      "TyNat"
+    | _ -> "NPI"
+
+
 (* processes the given command. Used by both methods process_file and process_line.
    Results are printed a new context is returned *)
 let rec process_command ctx cmd = match cmd with
   | Eval(fi,t) ->
-      if (=) (typeof ctx t) TyBool || (=) (typeof ctx t) TyNat then
+      if (=) (typeof ctx t) TyBool || (=) (typeof ctx t) TyNat || (=) (typeof ctx t) (TyArr(TyBool,TyBool)) then
         let t' = eval ctx t in
         printtm_ATerm true ctx t';
         force_newline();
         ctx
-        else error fi "que fallito"
+        else error fi (typeof2 ctx t)
   | Bind(fi,x,bind) ->
           let bind' = evalbinding ctx bind in
           pr "%s" x; pr " "; prbinding ctx bind'; force_newline();
