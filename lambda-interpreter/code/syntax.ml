@@ -234,20 +234,17 @@ let small t =
   | _ -> false
 
 let rec printtm_Term outer ctx t = match t with
-    TmIf(fi, t1, t2, t3) -> match t1 with
-      TmFalse(_)
-      |TmTrue(_) ->
-          obox0();
-          pr "if ";
-          printtm_Term false ctx t1;
-          print_space();
-          pr " then ";
-          printtm_Term false ctx t2;
-          print_space();
-          pr " else ";
-          printtm_Term false ctx t3;
-          cbox()
-      |_-> error fi "If condition must be a boolean"
+    TmIf(fi, t1, t2, t3) -> 
+        obox0();
+        pr "if ";
+        printtm_Term false ctx t1;
+        print_space();
+        pr " then ";
+        printtm_Term false ctx t2;
+        print_space();
+        pr " else ";
+        printtm_Term false ctx t3;
+        cbox()
   | TmAbs(fi,x,ty,t2) ->
       (let (ctx',x') = (pickfreshname ctx x) in
             obox(); pr "lambda "; pr "%s" x'; pr ": ";
