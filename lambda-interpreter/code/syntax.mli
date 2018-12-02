@@ -10,13 +10,13 @@
 open Support.Pervasive
 open Support.Error
 
-type ty =
-  TyBool
-  | TyNat
-  | TyArr of ty * ty
-;;
-
 (** Data type definitions **)
+type ty =
+    TyArr of ty * ty
+  | TyBool
+  | TyNat
+  | TyVar of int*int
+
 type term =
     TmTrue of info
   | TmFalse of info
@@ -35,10 +35,13 @@ type term =
   | TmIsZero of info * term
   | TmLet of info * string * term * term
 
-type binding =
-    NameBind
-  | VarBind of ty
-  | TmAbbBind of term
+
+  type binding =
+      NameBind
+    | TyVarBind
+    | VarBind of ty
+    | TmAbbBind of term * (ty option)
+    | TyAbbBind of ty
 
 type command =
   | Eval of info * term
@@ -63,10 +66,10 @@ val termSubstTop: term -> term -> term
 (** Printing **)
 val printtm: context -> term -> unit
 val printtm_ATerm: bool -> context -> term -> unit
+val printty : ty -> unit
 val prbinding : context -> binding -> unit
 
 (** Misc **)
 val tmInfo: term -> info
 
 val typeof: context -> term -> ty
-val typecheck: context -> term -> bool

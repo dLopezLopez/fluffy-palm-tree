@@ -27,10 +27,10 @@ let reservedWords = [
   ("Bool", fun i -> Parser.BOOL i);
   ("lambda", fun i -> Parser.LAMBDA i);
   ("timesfloat", fun i -> Parser.TIMESFLOAT i);
-  ("Nat", fun i -> Parser.NAT i);
   ("succ", fun i -> Parser.SUCC i);
   ("pred", fun i -> Parser.PRED i);
   ("iszero", fun i -> Parser.ISZERO i);
+  ("Nat", fun i -> Parser.NAT i);
   ("let", fun i -> Parser.LET i);
   ("in", fun i -> Parser.IN i);
 

@@ -52,46 +52,43 @@ let parseLine line =
 in
   result
 
-let rec typeof2 ctx t =
-  match t with
-    TmZero(_) ->
-      "TyNat"
-    | TmSucc(fi,t) ->
-      (if (=) (typeof ctx t) TyNat then
-        "TyNat"
-      else error fi "parameter type mismatch")
-    | TmPred(fi,t) ->
-      (if (=) (typeof ctx t) TyNat then
-        "TyNat"
-      else error fi "parameter type mismatch")
-    | TmIsZero(fi,t) ->
-      (if (=) (typeof ctx t) TyNat then
-        "TyBool"
-      else error fi "parameter type mismatch")
-    | TmTrue(_) ->
-      "TyBool"
-    | TmFalse(_) ->
-      "TyBool"
-    |TmAbs(fi,x,TyBool,t2) ->
-      "TyBool"
-    |TmAbs(fi,x,TyNat,t2) ->
-      "TyNat"
-    | _ -> "NPI"
+  let checkbinding fi ctx b = match b with
+      NameBind -> NameBind
+    | VarBind(tyT) -> VarBind(tyT)
+    | TmAbbBind(t,None) -> TmAbbBind(t, Some(typeof ctx t))
+    | TmAbbBind(t,Some(tyT)) ->
+       let tyT' = typeof ctx t in
+       if (=) tyT' tyT then TmAbbBind(t,Some(tyT))
+       else error fi "Type of binding does not match declared type"
+    | TyVarBind -> TyVarBind
+    | TyAbbBind(tyT) -> TyAbbBind(tyT)
 
+  let prbindingty ctx b = match b with
+      NameBind -> ()
+    | TyVarBind -> ()
+    | VarBind(tyT) -> pr ": "; printty tyT
+    | TmAbbBind(t, tyT_opt) -> pr ": ";
+       (match tyT_opt with
+           None -> printty (typeof ctx t)
+         | Some(tyT) -> printty  tyT)
+    | TyAbbBind(tyT) -> pr ":: *"
 
 (* processes the given command. Used by both methods process_file and process_line.
    Results are printed a new context is returned *)
 let rec process_command ctx cmd = match cmd with
   | Eval(fi,t) ->
-      if typecheck ctx t then
+        let tyT = typeof ctx t in
         let t' = eval ctx t in
         printtm_ATerm true ctx t';
+        print_break 1 2;
+        pr ": ";
+        printty tyT;
         force_newline();
         ctx
-      else error fi "que fallito"
   | Bind(fi,x,bind) ->
+          let bind = checkbinding fi ctx bind in
           let bind' = evalbinding ctx bind in
-          pr "%s" x; pr " "; prbinding ctx bind'; force_newline();
+          pr "%s" x; pr " "; prbindingty ctx bind'; force_newline();
           update_identifiers x bind';
           addbinding ctx x bind'
 

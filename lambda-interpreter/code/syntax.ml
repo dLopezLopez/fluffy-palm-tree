@@ -20,12 +20,11 @@ open Support.Pervasive
 (** ---------------------------------------------------------------------- **)
 (** Datatypes **)
 
-(*Types*)
 type ty =
-  TyBool
+    TyArr of ty * ty
+  | TyBool
   | TyNat
-  | TyArr of ty * ty
-;;
+  | TyVar of int*int
 
 (* Terms recognized by the program *)
 type term =
@@ -47,10 +46,13 @@ type term =
   | TmLet of info * string * term * term		(* Local variable *)
 
 (* 2 types of binding. The standalone and the one associated with a term *)
+
 type binding =
     NameBind
+  | TyVarBind
   | VarBind of ty
-  | TmAbbBind of term
+  | TmAbbBind of term * (ty option)
+  | TyAbbBind of ty
 
 (* The context type, a list of bindings and its symbols *)
 type context = (string * binding) list
@@ -62,7 +64,6 @@ type command =
 
 (** ---------------------------------------------------------------------- **)
 (** Context management (1) **)
-
 
 (* Represents an empty context *)
 let emptycontext = []
@@ -119,13 +120,21 @@ let rec name2index fi ctx x =
 (** Shifting **)
 
 (* defines behaviour when shifting each of the term 'types' *)
+let tymap onvar c tyT =
+  let rec walk c tyT = match tyT with
+   TyBool -> TyBool
+  | TyNat -> TyNat
+  | TyArr(tyT1,tyT2) -> TyArr(walk c tyT1,walk c tyT2)
+  in walk c tyT
+
+
 let tmmap onvar c t =
   let rec walk c t = match t with
     TmTrue(fi) as t -> t
   | TmFalse(fi) as t -> t
   | TmIf(fi,t1,t2,t3) -> TmIf(fi,walk c t1,walk c t2,walk c t3)
   | TmVar(fi,x,n) -> onvar fi c x n
-  | TmAbs(fi,x,ty,t2) -> TmAbs(fi,x,ty,walk (c+1) t2)
+  | TmAbs(fi,x,tyT1,t2) -> TmAbs(fi,x,tyT1,walk (c+1) t2)
   | TmApp(fi,t1,t2) -> TmApp(fi,walk c t1,walk c t2)
   | TmProj(fi,t1,l) -> TmProj(fi,walk c t1,l)
   | TmRecord(fi,fields) -> TmRecord(fi,List.map (fun (li,ti) ->
@@ -147,16 +156,29 @@ let termShiftAbove d c t =
     (fun fi c x n -> if x>=c then TmVar(fi,x+d,n+d) else TmVar(fi,x,n+d))
     c t
 
+let typeShiftAbove d c tyT =
+      tymap
+        (fun c x n -> if x>=c then TyVar(x+d,n+d) else TyVar(x,n+d))
+        c tyT
+
 (* calls termShiftAbove with c = 0 *)
 let termShift d t = termShiftAbove d 0 t
+
+
+let typeShift d tyT = typeShiftAbove d 0 tyT
 
 (* checks binding type. For a TmAbbBind performs shifting *)
 let bindingshift d bind =
   match bind with
     NameBind -> NameBind
-  | VarBind(ty) -> VarBind(ty)
-  | TmAbbBind(t) -> TmAbbBind(termShift d t)
-
+  |  TyVarBind -> TyVarBind
+  | TmAbbBind(t,tyT_opt) ->
+     let tyT_opt' = match tyT_opt with
+                      None->None
+                    | Some(tyT) -> Some(typeShift d tyT) in
+     TmAbbBind(termShift d t, tyT_opt')
+  | VarBind(tyT) -> VarBind(typeShift d tyT)
+  | TyAbbBind(tyT) -> TyAbbBind(typeShift d tyT)
 
 (** ---------------------------------------------------------------------- **)
 (** Context management (2) **)
@@ -172,6 +194,16 @@ let rec getbinding fi ctx i =
       let msg =
         Printf.sprintf "Variable lookup failure: offset: %d, ctx size: %d" in
       error fi (msg i (List.length ctx))
+
+      let getTypeFromContext fi ctx i =
+         match getbinding fi ctx i with
+               VarBind(tyT) -> tyT
+           | TmAbbBind(_,Some(tyT)) -> tyT
+           | TmAbbBind(_,None) -> error fi ("No type recorded for variable "
+                                              ^ (index2name fi ctx i))
+           | _ -> error fi
+             ("getTypeFromContext: Wrong kind of binding for variable "
+               ^ (index2name fi ctx i)) 
 
 (** ---------------------------------------------------------------------- **)
 (** Substitution **)
@@ -235,26 +267,42 @@ let small t =
     TmVar(_,_,_) -> true
   | _ -> false
 
+  let rec printty_Type outer tyT = match tyT with
+        tyT -> printty_ArrowType outer tyT
+
+  and printty_ArrowType outer  tyT = match tyT with
+      TyArr(tyT1,tyT2) ->
+        obox0();
+        printty_AType false tyT1;
+        if outer then pr " ";
+        pr "->";
+        if outer then print_space() else break();
+        printty_ArrowType outer tyT2;
+        cbox()
+    | tyT -> printty_AType outer tyT
+
+  and printty_AType outer tyT = match tyT with
+      TyBool -> pr "Bool"
+    | TyNat -> pr "Nat"
+    | tyT -> pr "("; printty_Type outer tyT; pr ")"
+
+  let printty tyT = printty_Type true tyT
+
 let rec printtm_Term outer ctx t = match t with
     TmIf(fi, t1, t2, t3) ->
-        obox0();
-        pr "if ";
-        printtm_Term false ctx t1;
-        print_space();
-        pr " then ";
-        printtm_Term false ctx t2;
-        print_space();
-        pr " else ";
-        printtm_Term false ctx t3;
-        cbox()
-  | TmAbs(fi,x,ty,t2) ->
+       obox0();
+       pr "if ";
+       printtm_Term false ctx t1;
+       print_space();
+       pr " then ";
+       printtm_Term false ctx t2;
+       print_space();
+       pr " else ";
+       printtm_Term false ctx t3;
+       cbox()
+  | TmAbs(fi,x,tyT1,t2) ->
       (let (ctx',x') = (pickfreshname ctx x) in
-            obox(); pr "lambda "; pr "%s" x'; pr ": ";
-            (match ty with
-              TyBool -> pr "Bool ";
-            | TyNat -> pr "Nat ";
-            );
-            pr ". ";
+            obox(); pr "lambda "; pr "%s" x'; pr ":"; printty_Type false tyT1; pr ". ";
             if (small t2) && not outer then break() else print_space();
             printtm_Term outer ctx' t2;
             cbox())
@@ -314,11 +362,11 @@ and printtm_ATerm outer ctx t = match t with
   | TmString(_,s) -> pr "%s" ("\"" ^ s ^ "\"")
   | TmZero(fi) ->
        pr "0"
-  | TmSucc(fi,t1) ->
+  | TmSucc(_,t1) ->
      let rec f n t = match t with
          TmZero(_) -> pr "%s" (string_of_int n)
        | TmSucc(_,s) -> f (n+1) s
-       | _ -> error fi "must be a number" (*(pr "(succ "; printtm_ATerm false ctx t1; pr ")")*)
+       | _ -> (pr "(succ "; printtm_ATerm false ctx t1; pr ")")
      in f 1 t1
   | t -> pr "("; printtm_Term outer ctx t; pr ")"
 
@@ -329,15 +377,8 @@ let printtm ctx t = printtm_Term true ctx t
    the equals symbol and the binding's term are printed *)
 let prbinding ctx b = match b with
     NameBind -> ()
-  | TmAbbBind(t) -> pr "= "; printtm ctx t
-;;
-  (*Typechecking*)
-  let getTypeFromContext fi ctx i =
-    match (getbinding fi ctx i) with
-      VarBind(tyT) -> tyT
-      | _ -> error fi
-       ("getTypeFromContext: Wrong kind of binding for variable" ^ (index2name fi ctx i))
-  ;;
+  | TmAbbBind(t,_) -> pr "= "; printtm ctx t
+  | VarBind(tyT) -> pr ": "; printty tyT
 
   let rec typeof ctx t =
     match t with
@@ -369,7 +410,7 @@ let prbinding ctx b = match b with
       | TmAbs(fi,x,tyT1,t2) ->
         let ctx' = addbinding ctx x (VarBind(tyT1)) in
         let tyT2 = typeof ctx' t2 in
-        tyT2
+        TyArr(tyT1,tyT2)
       | TmApp (fi,t1,t2) ->
         let tyT1 = typeof ctx t1 in
         let tyT2 = typeof ctx t2 in
@@ -378,9 +419,4 @@ let prbinding ctx b = match b with
             if (=) tyT2 tyT11 then tyT12
             else error fi "parameter type mismatch"
             | _ -> error fi "arrow type expected")
-      (*| _ -> error fi "no lo hicimos aún"*)
   ;;
-
-let typecheck ctx t =
-  match typeof ctx t with
-  _ -> true;;

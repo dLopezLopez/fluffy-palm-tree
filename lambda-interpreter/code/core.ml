@@ -52,9 +52,9 @@ let rec eval1 ctx t = match t with
       TmIf(fi, t1', t2, t3)
   | TmVar(fi,n,_) ->
       (match getbinding fi ctx n with
-          TmAbbBind(t) -> t
+          TmAbbBind(t,_) -> t
         | _ -> raise NoRuleApplies)
-  | TmApp(fi,TmAbs(_,x,_,t12),v2) when isval ctx v2 ->
+  | TmApp(fi,TmAbs(_,x,tyT11,t12),v2) when isval ctx v2 ->
       termSubstTop v2 t12
   | TmApp(fi,v1,t2) when isval ctx v1 ->
       let t2' = eval1 ctx t2 in
@@ -128,7 +128,7 @@ let rec eval ctx t =
 
 (* evalbinding evaluates the term contained by the binding until it cannot be evaluated anymore *)
 let evalbinding ctx b = match b with
-    TmAbbBind(t) ->
-      let t' = eval ctx t in
-      TmAbbBind(t')
+    TmAbbBind(t,tyT) ->
+      let t1 = eval ctx t in
+      TmAbbBind(t1,tyT)
   | bind -> bind
