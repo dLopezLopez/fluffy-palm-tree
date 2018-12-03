@@ -24,6 +24,7 @@ type ty =
     TyArr of ty * ty
   | TyBool
   | TyNat
+  | TyVar of int * int
 
 (* Terms recognized by the program *)
 type term =
@@ -194,6 +195,13 @@ let rec getbinding fi ctx i =
 
 (** ---------------------------------------------------------------------- **)
 (** Substitution **)
+
+let typeShiftAbove d c tyT =
+  tymap
+    (fun c x n -> if x>=c then TyVar(x+d,n+d) else TyVar(x,n+d))
+    c tyT
+
+let typeShift d tyT = typeShiftAbove d 0 tyT
 
 (* analogous to termShiftAbove, defines an onvar function and calls tmmap *)
 let termSubst j s t =
@@ -391,13 +399,17 @@ let prbinding ctx b = match b with
         if (=) (typeof ctx t1) TyBool then
           let tyT2 = typeof ctx t2 in
           if (=) tyT2 (typeof ctx t3) then tyT2
-          else error fi "arms of conditional hace different type"
-        else error fi "guard of conditional not a bollean"
+          else error fi "arms of conditional have different type"
+        else error fi "guard of conditional is not a bolean"
       | TmVar(fi,i,_) -> getTypeFromContext fi ctx i
       | TmAbs(fi,x,tyT1,t2) ->
         let ctx' = addbinding ctx x (VarBind(tyT1)) in
         let tyT2 = typeof ctx' t2 in
         TyArr(tyT1,tyT2)
+      | TmLet(fi,x,t1,t2) ->
+       let tyT1 = typeof ctx t1 in
+       let ctx' = addbinding ctx x (VarBind(tyT1)) in
+       typeShift (-1) (typeof ctx' t2)
       | TmApp (fi,t1,t2) ->
         let tyT1 = typeof ctx t1 in
         let tyT2 = typeof ctx t2 in

@@ -42,6 +42,7 @@ open Syntax
 %token <Support.Error.info> ISZERO
 %token <Support.Error.info> NAT
 %token <Support.Error.info> LET
+%token <Support.Error.info> LETREC
 %token <Support.Error.info> IN
 
 /* Identifier and constant value tokens */
@@ -202,6 +203,13 @@ Term :
       { fun ctx ->
           let ctx1 = addname ctx "_" in
           TmAbs($1, "_", $4 ctx, $6 ctx1) }
+  | LETREC LCID EQ Term IN Term
+    /* A "let word = Term in Term" clause is returned as a TmLet of the terms applied on current context
+      and the name of the last term added to the context */
+      { fun ctx -> TmLet($1, $2.v, $4 ctx, $6 (addname ctx $2.v)) }
+  | LETREC USCORE EQ Term IN Term
+    /* If a "let-in" is fed an underscore it simply disregards the variable name */
+      { fun ctx -> TmLet($1, "_", $4 ctx, $6 (addname ctx "_")) }
   | LET LCID EQ Term IN Term
     /* A "let word = Term in Term" clause is returned as a TmLet of the terms applied on current context
       and the name of the last term added to the context */

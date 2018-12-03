@@ -15,6 +15,7 @@ type ty =
     TyArr of ty * ty
   | TyBool
   | TyNat
+  | TyVar of int * int
 
 type term =
     TmTrue of info

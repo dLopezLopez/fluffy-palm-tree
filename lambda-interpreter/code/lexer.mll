@@ -32,6 +32,7 @@ let reservedWords = [
   ("iszero", fun i -> Parser.ISZERO i);
   ("Nat", fun i -> Parser.NAT i);
   ("let", fun i -> Parser.LET i);
+  ("letrec", fun i -> Parser.LETREC i);
   ("in", fun i -> Parser.IN i);
 
   (* Symbols *)
