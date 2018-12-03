@@ -176,11 +176,11 @@ AType :
         | AType
                   { $1 }
 
-TyBinder :
-                      /* empty */
+/*TyBinder :
+
   { fun ctx -> TyVarBind }
 | EQ Type
-  { fun ctx -> TyAbbBind($2 ctx) }
+  { fun ctx -> TyAbbBind($2 ctx) }*/
 
 
 Term :
@@ -224,7 +224,7 @@ AppTerm :
       /* A float multiplication of two parsed PathTerms is returned as a TmTimesfloat */
       { fun ctx -> TmTimesfloat($1, $2 ctx, $3 ctx) }
   | SUCC PathTerm
-      /* Successor of a parsed PathTerm becomes TmSucc of said PathTerm applied to current context */
+      /* Suc/* An abstraction macessor of a parsed PathTerm becomes TmSucc of said PathTerm applied to current context */
       { fun ctx -> TmSucc($1, $2 ctx) }
   | PRED PathTerm
       /* Predecessor of a parsed PathTerm becomes TmPred of said PathTerm applied to current context */

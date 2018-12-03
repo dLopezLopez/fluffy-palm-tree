@@ -24,7 +24,6 @@ type ty =
     TyArr of ty * ty
   | TyBool
   | TyNat
-  | TyVar of int*int
 
 (* Terms recognized by the program *)
 type term =
@@ -49,10 +48,8 @@ type term =
 
 type binding =
     NameBind
-  | TyVarBind
   | VarBind of ty
   | TmAbbBind of term * (ty option)
-  | TyAbbBind of ty
 
 (* The context type, a list of bindings and its symbols *)
 type context = (string * binding) list
@@ -156,29 +153,19 @@ let termShiftAbove d c t =
     (fun fi c x n -> if x>=c then TmVar(fi,x+d,n+d) else TmVar(fi,x,n+d))
     c t
 
-let typeShiftAbove d c tyT =
-      tymap
-        (fun c x n -> if x>=c then TyVar(x+d,n+d) else TyVar(x,n+d))
-        c tyT
-
 (* calls termShiftAbove with c = 0 *)
 let termShift d t = termShiftAbove d 0 t
-
-
-let typeShift d tyT = typeShiftAbove d 0 tyT
 
 (* checks binding type. For a TmAbbBind performs shifting *)
 let bindingshift d bind =
   match bind with
     NameBind -> NameBind
-  |  TyVarBind -> TyVarBind
   | TmAbbBind(t,tyT_opt) ->
      let tyT_opt' = match tyT_opt with
                       None->None
-                    | Some(tyT) -> Some(typeShift d tyT) in
+                    | Some(tyT) -> Some(tyT) in
      TmAbbBind(termShift d t, tyT_opt')
-  | VarBind(tyT) -> VarBind(typeShift d tyT)
-  | TyAbbBind(tyT) -> TyAbbBind(typeShift d tyT)
+  | VarBind(tyT) -> VarBind(tyT)
 
 (** ---------------------------------------------------------------------- **)
 (** Context management (2) **)
@@ -203,7 +190,7 @@ let rec getbinding fi ctx i =
                                               ^ (index2name fi ctx i))
            | _ -> error fi
              ("getTypeFromContext: Wrong kind of binding for variable "
-               ^ (index2name fi ctx i)) 
+               ^ (index2name fi ctx i))
 
 (** ---------------------------------------------------------------------- **)
 (** Substitution **)

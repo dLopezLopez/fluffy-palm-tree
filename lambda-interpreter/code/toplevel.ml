@@ -60,18 +60,15 @@ in
        let tyT' = typeof ctx t in
        if (=) tyT' tyT then TmAbbBind(t,Some(tyT))
        else error fi "Type of binding does not match declared type"
-    | TyVarBind -> TyVarBind
-    | TyAbbBind(tyT) -> TyAbbBind(tyT)
 
   let prbindingty ctx b = match b with
       NameBind -> ()
-    | TyVarBind -> ()
+    (*| TyVarBind -> ()*)
     | VarBind(tyT) -> pr ": "; printty tyT
     | TmAbbBind(t, tyT_opt) -> pr ": ";
        (match tyT_opt with
            None -> printty (typeof ctx t)
          | Some(tyT) -> printty  tyT)
-    | TyAbbBind(tyT) -> pr ":: *"
 
 (* processes the given command. Used by both methods process_file and process_line.
    Results are printed a new context is returned *)

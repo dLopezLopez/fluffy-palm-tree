@@ -15,7 +15,6 @@ type ty =
     TyArr of ty * ty
   | TyBool
   | TyNat
-  | TyVar of int*int
 
 type term =
     TmTrue of info
@@ -38,10 +37,8 @@ type term =
 
   type binding =
       NameBind
-    | TyVarBind
     | VarBind of ty
     | TmAbbBind of term * (ty option)
-    | TyAbbBind of ty
 
 type command =
   | Eval of info * term
