@@ -206,10 +206,10 @@ Term :
   | LETREC LCID EQ Term IN Term
     /* A "let word = Term in Term" clause is returned as a TmLet of the terms applied on current context
       and the name of the last term added to the context */
-      { fun ctx -> TmLet($1, $2.v, $4 ctx, $6 (addname ctx $2.v)) }
+      { fun ctx -> TmLet(%1, $2.v, $4 ctx, $6 (addname ctx $2.v)) }
   | LETREC USCORE EQ Term IN Term
     /* If a "let-in" is fed an underscore it simply disregards the variable name */
-      { fun ctx -> TmLet($1, "_", $4 ctx, $6 (addname ctx "_")) }
+      { fun ctx -> TmLetRec($1, "_", $4 ctx, $6 (addname ctx "_")) }
   | LET LCID EQ Term IN Term
     /* A "let word = Term in Term" clause is returned as a TmLet of the terms applied on current context
       and the name of the last term added to the context */
