@@ -147,6 +147,7 @@ let tmmap onvar c t =
   | TmPred(fi,t1)   -> TmPred(fi, walk c t1)
   | TmIsZero(fi,t1) -> TmIsZero(fi, walk c t1)
   | TmLet(fi,x,t,t1,t2) -> TmLet(fi,x,t,walk c t1,walk (c+1) t2)
+  | TmLetRec(fi,x,t,t1,t2) -> TmLetRec(fi,x,t,walk c t1,walk (c+1) t2)
   in walk c t
 
 (* defines an onvar function that is passed to tmmap and calls tmmap *)
