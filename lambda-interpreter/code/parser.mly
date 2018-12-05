@@ -203,20 +203,21 @@ Term :
       { fun ctx ->
           let ctx1 = addname ctx "_" in
           TmAbs($1, "_", $4 ctx, $6 ctx1) }
-  | LETREC LCID EQ Term IN Term
+  | LETREC LCID COLON Type EQ Term IN Term
     /* A "let word = Term in Term" clause is returned as a TmLet of the terms applied on current context
       and the name of the last term added to the context */
-      { fun ctx -> TmLet(%1, $2.v, $4 ctx, $6 (addname ctx $2.v)) }
-  | LETREC USCORE EQ Term IN Term
+      { fun ctx -> TmLetRec($1, $2.v, $4 ctx ,$6 ctx, $8 (addname ctx $2.v)) }
+      /*{ fun ctx -> TmLet($1, $2.v, TmApp($1,fix (typeof ctx $6) $1,TmAbs($1,"f",(typeof ctx $6),$6 (addname ctx "f"))), $8 (addname ctx $2.v))}*/
+  | LETREC USCORE COLON Type EQ Term IN Term
     /* If a "let-in" is fed an underscore it simply disregards the variable name */
-      { fun ctx -> TmLetRec($1, "_", $4 ctx, $6 (addname ctx "_")) }
-  | LET LCID EQ Term IN Term
+      { fun ctx -> TmLetRec($1, "_", $4 ctx ,$6 ctx, $8 (addname ctx "_")) }
+  | LET LCID COLON Type EQ Term IN Term
     /* A "let word = Term in Term" clause is returned as a TmLet of the terms applied on current context
       and the name of the last term added to the context */
-      { fun ctx -> TmLet($1, $2.v, $4 ctx, $6 (addname ctx $2.v)) }
-  | LET USCORE EQ Term IN Term
+      { fun ctx -> TmLet($1, $2.v, $4 ctx ,$6 ctx, $8 (addname ctx $2.v)) }
+  | LET USCORE COLON Type EQ Term IN Term
     /* If a "let-in" is fed an underscore it simply disregards the variable name */
-      { fun ctx -> TmLet($1, "_", $4 ctx, $6 (addname ctx "_")) }
+      { fun ctx -> TmLet($1, "_", $4 ctx ,$6 ctx, $8 (addname ctx "_")) }
 
 AppTerm :
     PathTerm

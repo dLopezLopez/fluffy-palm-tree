@@ -104,11 +104,16 @@ let rec eval1 ctx t = match t with
   | TmIsZero(fi,t1) ->
       let t1' = eval1 ctx t1 in
       TmIsZero(fi, t1')
-  | TmLet(fi,x,v1,t2) when isval ctx v1 ->
+  | TmLet(fi,x,tty,v1,t2) when isval ctx v1 ->
       termSubstTop v1 t2
-  | TmLet(fi,x,t1,t2) ->
+  | TmLet(fi,x,tty,t1,t2) ->
       let t1' = eval1 ctx t1 in
-      TmLet(fi, x, t1', t2)
+      TmLet(fi, x,tty ,t1', t2)
+  | TmLetRec(fi,x, tty,v1, t2) when isval ctx v1 ->
+      termSubstTop v1 t2
+  | TmLetRec(fi,x,tty,t1,t2) ->
+      let t1' = eval1 ctx t1 in
+      TmLetRec(fi,x,tty, t1', t2)
   | _ ->
       raise NoRuleApplies
 
