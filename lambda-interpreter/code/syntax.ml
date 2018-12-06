@@ -419,3 +419,13 @@ let prbinding ctx b = match b with
             else error fi "parameter type mismatch"
             | _ -> error fi "arrow type expected")
   ;;
+
+    (*Fix*)
+    let fix ty fi x ctx =
+      TmAbs(fi,x,ty,
+        TmApp(fi,TmAbs(fi,"x",ty,
+          TmApp(fi,TmVar(fi, name2index fi ctx x, ctxlength ctx) ,TmAbs(fi,"y",ty,TmApp(fi,TmApp(fi,TmVar(fi, name2index fi ctx "x", ctxlength ctx),TmVar(fi, name2index fi ctx "y", ctxlength ctx)),TmVar(fi, name2index fi ctx "y", ctxlength ctx))))
+        ),TmAbs(fi,"x",ty,
+          TmApp(fi,TmVar(fi, name2index fi ctx x, ctxlength ctx) ,TmAbs(fi,"y",ty,TmApp(fi,TmApp(fi,TmVar(fi, name2index fi ctx "x", ctxlength ctx),TmVar(fi, name2index fi ctx "y", ctxlength ctx)),TmVar(fi, name2index fi ctx "y", ctxlength ctx))))
+        )))
+    ;;

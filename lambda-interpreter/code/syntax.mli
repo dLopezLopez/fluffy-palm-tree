@@ -71,3 +71,5 @@ val prbinding : context -> binding -> unit
 val tmInfo: term -> info
 
 val typeof: context -> term -> ty
+
+val fix : ty -> info -> string -> context -> term

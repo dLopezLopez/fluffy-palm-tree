@@ -206,8 +206,8 @@ Term :
   | LETREC LCID COLON Type EQ Term IN Term
     /* A "let word = Term in Term" clause is returned as a TmLet of the terms applied on current context
       and the name of the last term added to the context */
-      { fun ctx -> TmLet($1, $2.v, $6 ctx, $8 (addname ctx $2.v)) }
-      /*{ fun ctx -> TmLet($1, $2.v, TmApp($1,fix (typeof ctx $6) $1,TmAbs($1,"f",(typeof ctx $6),$6 (addname ctx "f"))), $8 (addname ctx $2.v))}*/
+      /*{ fun ctx -> TmLet($1, $2.v, $6 ctx, $8 (addname ctx $2.v)) }*/
+      { fun ctx -> TmLet($1, $2.v, TmApp($1,fix TyNat $1 $2.v ctx,TmAbs($1,$2.v,TyNat,$6 (addname ctx $2.v))), $8 (addname ctx $2.v))}
   | LETREC USCORE COLON Type EQ Term IN Term
     /* If a "let-in" is fed an underscore it simply disregards the variable name */
       { fun ctx -> TmLet($1, "_", $6 ctx, $8 (addname ctx "_")) }

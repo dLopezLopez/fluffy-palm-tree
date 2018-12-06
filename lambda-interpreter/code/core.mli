@@ -15,5 +15,5 @@ open Support.Error
 
 val debug : bool ref
 
-val eval : context -> term -> term 
-val evalbinding : context -> binding -> binding 
+val eval : context -> term -> term
+val evalbinding : context -> binding -> binding
