@@ -33,7 +33,8 @@ type term =
   | TmSucc of info * term
   | TmPred of info * term
   | TmIsZero of info * term
-  | TmLet of info * string * term * term
+  | TmLet of info * string * ty * term * term
+  | TmLetRec of info * string * ty * term * term
 
 
   type binding =

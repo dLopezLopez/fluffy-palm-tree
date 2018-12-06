@@ -43,7 +43,8 @@ type term =
   | TmSucc of info * term				(* Successor *)
   | TmPred of info * term				(* Predecessor *)
   | TmIsZero of info * term				(* IsZero *)
-  | TmLet of info * string * term * term		(* Local variable *)
+  | TmLet of info * string * ty *  term * term		(* Local variable *)
+  | TmLetRec of info * string * ty * term  * term
 
 (* 2 types of binding. The standalone and the one associated with a term *)
 
@@ -145,7 +146,8 @@ let tmmap onvar c t =
   | TmSucc(fi,t1)   -> TmSucc(fi, walk c t1)
   | TmPred(fi,t1)   -> TmPred(fi, walk c t1)
   | TmIsZero(fi,t1) -> TmIsZero(fi, walk c t1)
-  | TmLet(fi,x,t1,t2) -> TmLet(fi,x,walk c t1,walk (c+1) t2)
+  | TmLet(fi,x,t,t1,t2) -> TmLet(fi,x,t,walk c t1,walk (c+1) t2)
+  | TmLetRec(fi,x,t,t1,t2) -> TmLetRec(fi,x,t,walk c t1,walk (c+1) t2)
   in walk c t
 
 (* defines an onvar function that is passed to tmmap and calls tmmap *)
@@ -234,7 +236,8 @@ let tmInfo t = match t with
   | TmSucc(fi,_) -> fi
   | TmPred(fi,_) -> fi
   | TmIsZero(fi,_) -> fi
-  | TmLet(fi,_,_,_) -> fi
+  | TmLet(fi,_,_,_,_) -> fi
+  | TmLetRec(fi,_,_,_,_) -> fi
 
 (** ---------------------------------------------------------------------- **)
 (** Printing **)
@@ -301,7 +304,7 @@ let rec printtm_Term outer ctx t = match t with
             if (small t2) && not outer then break() else print_space();
             printtm_Term outer ctx' t2;
             cbox())
-  | TmLet(fi, x, t1, t2) ->
+  | TmLet(fi, x,_ ,t1, t2) ->
        obox0();
        pr "let "; pr "%s" x; pr " = ";
        printtm_Term false ctx t1;
@@ -406,10 +409,18 @@ let prbinding ctx b = match b with
         let ctx' = addbinding ctx x (VarBind(tyT1)) in
         let tyT2 = typeof ctx' t2 in
         TyArr(tyT1,tyT2)
-      | TmLet(fi,x,t1,t2) ->
+      | TmLet(fi,x,tty,t1,t2) ->
        let tyT1 = typeof ctx t1 in
-       let ctx' = addbinding ctx x (VarBind(tyT1)) in
-       typeShift (-1) (typeof ctx' t2)
+          if (=) tyT1 tty then
+             let ctx' = addbinding ctx x (VarBind(tyT1)) in
+             typeShift (-1) (typeof ctx' t2)
+          else error fi "Error type"
+      | TmLetRec(fi,x,tty,t1,t2) ->
+        let tyT1 = typeof ctx t1 in
+          if (=) tyT1 tty then
+            (let ctx' = addbinding ctx x (VarBind(tyT1)) in
+            typeShift (-1) (typeof ctx' t2))
+          else error fi "Error type"
       | TmApp (fi,t1,t2) ->
         let tyT1 = typeof ctx t1 in
         let tyT2 = typeof ctx t2 in
