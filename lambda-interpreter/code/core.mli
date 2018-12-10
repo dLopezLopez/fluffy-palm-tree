@@ -17,3 +17,4 @@ val debug : bool ref
 
 val eval : context -> term -> term
 val evalbinding : context -> binding -> binding
+val typeof : context -> term -> ty

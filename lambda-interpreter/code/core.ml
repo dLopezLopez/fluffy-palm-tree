@@ -109,6 +109,13 @@ let rec eval1 ctx t = match t with
   | TmLet(fi,x,tty,t1,t2) ->
       let t1' = eval1 ctx t1 in
       TmLet(fi, x,tty ,t1', t2)
+  | TmFix(fi,v1) as t when isval ctx v1 ->
+     (match v1 with
+        TmAbs(_,_,_,t12) -> termSubstTop t t12
+      | _ -> raise NoRuleApplies)
+  | TmFix(fi,t1) ->
+      let t1' = eval1 ctx t1
+      in TmFix(fi,t1')
   | TmLetRec(fi,x, tty,v1, t2) when isval ctx v1 ->
       termSubstTop v1 t2
   | TmLetRec(fi,x,tty,t1,t2) ->
@@ -137,3 +144,85 @@ let evalbinding ctx b = match b with
       let t1 = eval ctx t in
       TmAbbBind(t1,tyT)
   | bind -> bind
+
+
+
+let gettyabb ctx i =
+  match getbinding dummyinfo ctx i with
+   TyAbbBind(tyT) -> tyT
+  | _ -> raise NoRuleApplies
+
+let istyabb ctx i =
+  match getbinding dummyinfo ctx i with
+    TyAbbBind(tyT) -> true
+  | _ -> false
+
+let rec computety ctx tyT = match tyT with
+    TyVar(i,_) when istyabb ctx i -> gettyabb ctx i
+  | _ -> raise NoRuleApplies
+
+let rec simplifyty ctx tyT =
+  try
+    let tyT' = computety ctx tyT in
+    simplifyty ctx tyT'
+  with NoRuleApplies -> tyT
+
+let rec typeof ctx t =
+  match t with
+    TmZero(_) ->
+      TyNat
+    | TmSucc(fi,t) ->
+      (if (=) (typeof ctx t) TyNat then
+        TyNat
+      else error fi "parameter type mismatch")
+    | TmPred(fi,t) ->
+      (if (=) (typeof ctx t) TyNat then
+        TyNat
+      else error fi "parameter type mismatch")
+    | TmIsZero(fi,t) ->
+      (if (=) (typeof ctx t) TyNat then
+        TyBool
+      else error fi "parameter type mismatch")
+    | TmTrue(_) ->
+      TyBool
+    | TmFalse(_) ->
+      TyBool
+    | TmIf(fi,t1,t2,t3) ->
+      if (=) (typeof ctx t1) TyBool then
+        let tyT2 = typeof ctx t2 in
+        if (=) tyT2 (typeof ctx t3) then tyT2
+        else error fi "arms of conditional have different type"
+      else error fi "guard of conditional is not a bolean"
+    | TmVar(fi,i,_) -> getTypeFromContext fi ctx i
+    | TmAbs(fi,x,tyT1,t2) ->
+      let ctx' = addbinding ctx x (VarBind(tyT1)) in
+      let tyT2 = typeof ctx' t2 in
+      TyArr(tyT1,tyT2)
+    | TmLet(fi,x,tty,t1,t2) ->
+     let tyT1 = typeof ctx t1 in
+        if (=) tyT1 tty then
+           let ctx' = addbinding ctx x (VarBind(tyT1)) in
+           typeShift (-1) (typeof ctx' t2)
+        else error fi "Error type"
+    | TmFix(fi, t1) ->
+    let tyT1 = typeof ctx t1 in
+    (match simplifyty ctx tyT1 with
+         TyArr(tyT11,tyT12) ->
+           if (=) tyT12 tyT11 then tyT12
+           else error fi "result of body not compatible with domain"
+       | _ -> error fi "arrow type expected")
+    | TmLetRec(fi,x,tty,t1,t2) ->
+      let tyT1 = typeof ctx t1 in
+        if (=) tyT1 tty then
+          (let ctx' = addbinding ctx x (VarBind(tyT1)) in
+          typeShift (-1) (typeof ctx' t2))
+        else error fi "Error type"
+    | TmApp (fi,t1,t2) ->
+      let tyT1 = typeof ctx t1 in
+      let tyT2 = typeof ctx t2 in
+      (match tyT1 with
+        TyArr(tyT11,tyT12) ->
+          if (=) tyT2 tyT11 then tyT12
+          else error fi "parameter type mismatch"
+          | _ -> error fi "arrow type expected")
+;;

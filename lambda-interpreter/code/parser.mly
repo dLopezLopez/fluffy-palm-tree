@@ -42,6 +42,7 @@ open Syntax
 %token <Support.Error.info> ISZERO
 %token <Support.Error.info> NAT
 %token <Support.Error.info> LET
+%token <Support.Error.info> FIX
 %token <Support.Error.info> LETREC
 %token <Support.Error.info> IN
 
@@ -206,12 +207,12 @@ Term :
   | LETREC LCID COLON Type EQ Term IN Term
     /* A "let word = Term in Term" clause is returned as a TmLet of the terms applied on current context
       and the name of the last term added to the context */
-      /*{ fun ctx -> TmLet($1, $2.v, $6 ctx, $8 (addname ctx $2.v)) }*/
-      { fun ctx -> TmLet($1, $2.v, TmApp($1,fix TyNat $1 $2.v ctx,TmAbs($1,$2.v,TyNat,$6 (addname ctx $2.v))), $8 (addname ctx $2.v))}
+      { fun ctx ->
+          let ctx1 = addname ctx $2.v in
+          TmLet($1, $2.v,$4 ctx , TmFix($1, TmAbs($1, $2.v, $4 ctx, $6 ctx1)),
+                $8 ctx1) }
 
-  | LETREC USCORE COLON Type EQ Term IN Term
-    /* If a "let-in" is fed an underscore it simply disregards the variable name */
-      { fun ctx -> TmLetRec($1, "_", $4 ctx ,$6 ctx, $8 (addname ctx "_")) }
+
   | LET LCID COLON Type EQ Term IN Term
     /* A "let word = Term in Term" clause is returned as a TmLet of the terms applied on current context
       and the name of the last term added to the context */
