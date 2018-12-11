@@ -1,0 +1,46 @@
+# #load "support.cmo";;
+
+# #load "syntax.cmo";; 
+
+# #load "parser.cmo";; 
+
+# #load "lexer.cmo";; 
+
+# let bf = Lexing.from_string "fix = lambda f . (lambda x . f ( lambda y . x x y )) (lambda x . f (lambda y . x x y));";;
+val bf : Lexing.lexbuf =
+  {Lexing.refill_buff = <fun>;
+   lex_buffer =
+    "fix = lambda f . (lambda x . f ( lambda y . x x y )) (lambda x . f (lambda y . x x y));";
+   lex_buffer_len = 87; lex_abs_pos = 0; lex_start_pos = 0; lex_curr_pos = 0;
+   lex_last_pos = 0; lex_last_action = 0; lex_eof_reached = true;
+   lex_mem = [||];
+   lex_start_p =
+    {Lexing.pos_fname = ""; pos_lnum = 1; pos_bol = 0; pos_cnum = 0};
+   lex_curr_p =
+    {Lexing.pos_fname = ""; pos_lnum = 1; pos_bol = 0; pos_cnum = 0}}
+
+# let f = Parser.toplevel Lexer.main bf;;                               
+val f : Syntax.context -> Syntax.command list * Syntax.context = <fun>
+
+# f Syntax.emptycontext;;
+- : Syntax.command list * Syntax.context =
+([Syntax.Bind (<abstr>, "fix",
+   Syntax.TmAbbBind
+    (Syntax.TmAbs (<abstr>, "f",
+      Syntax.TmApp (<abstr>,
+       Syntax.TmAbs (<abstr>, "x",
+        Syntax.TmApp (<abstr>, Syntax.TmVar (<abstr>, 1, 2),
+         Syntax.TmAbs (<abstr>, "y",
+          Syntax.TmApp (<abstr>,
+           Syntax.TmApp (<abstr>, Syntax.TmVar (<abstr>, 1, 3),
+            Syntax.TmVar (<abstr>, 1, 3)),
+           Syntax.TmVar (<abstr>, 0, 3))))),
+       Syntax.TmAbs (<abstr>, "x",
+        Syntax.TmApp (<abstr>, Syntax.TmVar (<abstr>, 1, 2),
+         Syntax.TmAbs (<abstr>, "y",
+          Syntax.TmApp (<abstr>,
+           Syntax.TmApp (<abstr>, Syntax.TmVar (<abstr>, 1, 3),
+            Syntax.TmVar (<abstr>, 1, 3)),
+           Syntax.TmVar (<abstr>, 0, 3)))))))))],
+ [("fix", Syntax.NameBind)])
+
