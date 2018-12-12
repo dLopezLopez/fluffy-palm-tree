@@ -225,4 +225,5 @@ let rec typeof ctx t =
           if (=) tyT2 tyT11 then tyT12
           else error fi "parameter type mismatch"
           | _ -> error fi "arrow type expected")
+    | _ -> error dummyinfo "Error type" 
 ;;

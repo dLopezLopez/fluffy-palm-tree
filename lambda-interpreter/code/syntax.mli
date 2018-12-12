@@ -15,7 +15,7 @@ type ty =
     TyArr of ty * ty
   | TyBool
   | TyNat
-  | TyVar of int * int
+  | TyVar of int * int 
 
 (* Terms recognized by the program *)
 type term =
